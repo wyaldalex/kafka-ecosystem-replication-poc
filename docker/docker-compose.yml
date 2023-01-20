@@ -1,0 +1,94 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: bank_source_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=arctype
+
+  targetdb:
+    image: postgres:latest
+    container_name: insurance_target_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5532:5432'        
+
+  zookeeper:
+    image: debezium/zookeeper
+    container_name: zookeeper_bank_insurance
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+
+  kafka:
+    image: debezium/kafka
+    container_name: kafka_bank_insurance
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    depends_on:
+      - zookeeper
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=LISTENER_EXT://localhost:29092,LISTENER_INT://kafka:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=LISTENER_INT:PLAINTEXT,LISTENER_EXT:PLAINTEXT
+      - KAFKA_LISTENERS=LISTENER_INT://0.0.0.0:9092,LISTENER_EXT://0.0.0.0:29092
+      - KAFKA_INTER_BROKER_LISTENER_NAME=LISTENER_INT
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry
+    container_name: schema_bank_insurance
+    ports:
+     - 8079:8081
+    environment:
+     - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka:9092
+     - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+     - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+    depends_on:
+      - zookeeper
+      - kafka     
+
+  connect:
+    image: debezium/connect
+    container_name: connect_bank_insurance
+    ports:
+      - "8083:8083"
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+      - CONNECT_PLUGIN_PATH=/etc/kafka-connect/jars,/kafka/connect
+    volumes:
+      - ./connectors:/etc/kafka-connect/jars/      
+    depends_on:
+      - zookeeper
+      - kafka
+      - schema-registry
+     
+
+  ksqldb-server:
+    image: confluentinc/ksqldb-server
+    hostname: ksqldb-server
+    container_name: ksqldb_bank_insurance
+    depends_on:
+      - zookeeper    
+      - kafka
+      - schema-registry      
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: kafka:9092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+                         

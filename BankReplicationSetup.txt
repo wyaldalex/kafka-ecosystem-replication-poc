@@ -1,0 +1,55 @@
+---------------------------------------------BANK Operations-----------------------------------------------
+alter system set wal_level to 'logical';
+
+
+CREATE TABLE INSURANCE_PAYMENTS (
+	payment_id SERIAL PRIMARY KEY,
+	notes text,
+	total FLOAT,
+	beneficiary_id INTEGER,
+	insurance_id INTEGER,
+	insurance_type INTEGER	
+);
+
+INSERT INTO INSURANCE_PAYMENTS(notes,total,beneficiary_id,insurance_id,insurance_type)
+VALUES('Extra payment', 100.50,33,17818,3);
+select * from insurance_payments;
+
+
+Stream operations
+//Create the cleaning stream
+{"before": null, "after": {"payment_id": 1, "notes": "Extra payment", "total": 123.12, "beneficiary_id": 33, "insurance_id": 17818, "insurance_type": 3}, "source": {"version": "2.1.1.Final", "connector": "postgresql", "name": "payments", "ts_ms": 1673988040437, "snapshot": "false", "db": "postgres", "sequence": "[null,\"24278984\"]", "schema": "public", "table": "insurance_payments", "txId": 737, "lsn": 24278984, "xmin": null}, "op": "c", "ts_ms": 1673988040945, "transaction": null}
+
+Prepare data for aggregation
+
+CREATE STREAM PAYMENT_AGGREGATOR_EXTRACTOR_STREAM (
+  after STRUCT<payment_id INTEGER,
+  insurance_type INTEGER,
+  total DOUBLE>
+)
+WITH (kafka_topic='payments.public.insurance_payments', value_format='avro', KEY_FORMAT='AVRO');
+
+Clean the struct
+
+//Notice that MAX is being used on the payment_id as it requieres some aggregation function 
+because its not part of the group by clause
+CREATE TABLE PAYMENTS_SUM_AGGREGATOR_TABLE WITH (VALUE_FORMAT='AVRO',KEY_FORMAT='AVRO') AS
+    SELECT AFTER->insurance_type AS id,
+	       MAX(AFTER->payment_id) counter,
+           AS_VALUE(AFTER->insurance_type) insurance_type,
+           SUM(AFTER->TOTAL) AS TOTAL
+    FROM PAYMENT_AGGREGATOR_EXTRACTOR_STREAM
+    GROUP BY (AFTER->insurance_type);
+
+
+Table side queries	
+	
+Where to check connect logs:
+/kafka/logs
+
+Best option use upsert +
+SELECT * FROM public."PAYMENTS_SUM_AGGREGATOR_TABLE"
+LIMIT 100
+
+SELECT * FROM public."PAYMENTS_SUM_AGGREGATOR_TABLE" p order by p."INSURANCE_TYPE" ASC
+LIMIT 100

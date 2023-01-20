@@ -1,0 +1,102 @@
+{
+	"info": {
+		"_postman_id": "d6db13af-36cd-4219-ba15-bd4c7e0490a7",
+		"name": "MyBank Kafka Cluster Connect Setup",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ConfigConnectorSetup SOURCE",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"arctype-connector\",\r\n    \"config\": {\r\n        \"connector.class\": \"io.debezium.connector.postgresql.PostgresConnector\",\r\n        \"tasks.max\": \"1\",\r\n        \"plugin.name\": \"pgoutput\",\r\n        \"database.hostname\": \"db\",\r\n        \"database.port\": \"5432\",\r\n        \"database.user\": \"postgres\",\r\n        \"database.password\": \"arctype\",\r\n        \"database.dbname\": \"postgres\",\r\n        \"database.server.name\": \"BANKDB\",\r\n        \"key.converter.schemas.enable\": \"false\",\r\n        \"value.converter.schemas.enable\": \"false\",\r\n        \"snapshot.mode\": \"always\",\r\n        \"topic.prefix\": \"payments\",\r\n        \"topic.suffix\": \"avro\",\r\n        \"key.converter\": \"io.confluent.connect.avro.AvroConverter\",\r\n        \"value.converter\": \"io.confluent.connect.avro.AvroConverter\",\r\n        \"key.converter.schema.registry.url\": \"http://schema-registry:8081\",\r\n        \"value.converter.schema.registry.url\": \"http://schema-registry:8081\"        \r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8083/connectors",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8083",
+					"path": [
+						"connectors"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfigConnectorSetup SINK SUM",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\" : \"jdbc-sum-revenue-sink\",\r\n  \"config\" : {\r\n    \"connector.class\" : \"io.confluent.connect.jdbc.JdbcSinkConnector\",\r\n    \"key.converter\" : \"io.confluent.connect.avro.AvroConverter\",\r\n    \"value.converter\" : \"io.confluent.connect.avro.AvroConverter\",\r\n    \"topics\" : \"PAYMENTS_SUM_AGGREGATOR_TABLE\",\r\n    \"transforms\" : \"unwrap\",\r\n    \"connection.url\" : \"jdbc:postgresql://targetdb:5432/postgres?user=postgres&password=postgres\",\r\n    \"pk.fields\" : \"id\",\r\n    \"auto.create\" : \"true\",\r\n    \"auto.evolve\" : \"true\",\r\n    \"transforms.unwrap.drop.tombstones\" : \"false\",\r\n    \"transforms.unwrap.type\" : \"io.debezium.transforms.ExtractNewRecordState\",\r\n    \"value.converter.schema.registry.url\" : \"http://schema-registry:8081\",\r\n    \"key.converter.schemas.enable\" : \"false\",\r\n    \"value.converter.schemas.enable\" : \"false\",\r\n    \"key.converter.schema.registry.url\" : \"http://schema-registry:8081\"\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8083/connectors",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8083",
+					"path": [
+						"connectors"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfigConnectorSetup SINK SUM UPSERT",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\" : \"jdbc-sum-revenue-sink\",\r\n  \"config\" : {\r\n    \"connector.class\" : \"io.confluent.connect.jdbc.JdbcSinkConnector\",\r\n    \"key.converter\" : \"io.confluent.connect.avro.AvroConverter\",\r\n    \"value.converter\" : \"io.confluent.connect.avro.AvroConverter\",\r\n    \"topics\" : \"PAYMENTS_SUM_AGGREGATOR_TABLE\",\r\n    \"transforms\" : \"unwrap\",\r\n    \"connection.url\" : \"jdbc:postgresql://targetdb:5432/postgres?user=postgres&password=postgres\",\r\n    \"insert.mode\" : \"upsert\",\r\n    \"pk.mode\" : \"record_value\",\r\n    \"pk.fields\" : \"INSURANCE_TYPE\",\r\n    \"auto.create\" : \"true\",\r\n    \"auto.evolve\" : \"true\",\r\n    \"transforms.unwrap.drop.tombstones\" : \"false\",\r\n    \"transforms.unwrap.type\" : \"io.debezium.transforms.ExtractNewRecordState\",\r\n    \"value.converter.schema.registry.url\" : \"http://schema-registry:8081\",\r\n    \"key.converter.schemas.enable\" : \"false\",\r\n    \"value.converter.schemas.enable\" : \"false\",\r\n    \"key.converter.schema.registry.url\" : \"http://schema-registry:8081\"\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8083/connectors",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8083",
+					"path": [
+						"connectors"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
