@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d6db13af-36cd-4219-ba15-bd4c7e0490a7",
+		"_postman_id": "d48f680a-c9e0-4253-aa72-62443a806f6f",
 		"name": "MyBank Kafka Cluster Connect Setup",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -94,6 +94,157 @@
 					"path": [
 						"connectors"
 					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "KSQLDB show streams",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"ksql\": \"show streams;\",\r\n  \"streamProperties\":{}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8088/ksql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"ksql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "KSQLDB show tables",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"ksql\": \"show tables;\",\r\n  \"streamProperties\":{}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8088/ksql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"ksql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "KSQLDB Create Stream",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"ksql\": \"CREATE STREAM PAYMENT_AGGREGATOR_EXTRACTOR_STREAM (after STRUCT<payment_id INTEGER, insurance_type INTEGER, total DOUBLE>) WITH (kafka_topic='payments.public.insurance_payments', value_format='avro', KEY_FORMAT='AVRO');\",\r\n  \"streamsProperties\": {\r\n    \"ksql.streams.auto.offset.reset\": \"earliest\"\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8088/ksql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"ksql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "KSQLDB Drop Stream",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"ksql\": \"DROP STREAM PAYMENT_AGGREGATOR_EXTRACTOR_STREAM ;\",\r\n  \"streamsProperties\": {\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8088/ksql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"ksql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "KSQLDB Create Table",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"ksql\": \"CREATE TABLE PAYMENTS_SUM_AGGREGATOR_TABLE WITH (VALUE_FORMAT='AVRO',KEY_FORMAT='AVRO') AS SELECT AFTER->insurance_type AS id, MAX(AFTER->payment_id) counter, AS_VALUE(AFTER->insurance_type) insurance_type, SUM(AFTER->TOTAL) AS TOTAL FROM PAYMENT_AGGREGATOR_EXTRACTOR_STREAM GROUP BY (AFTER->insurance_type);\",\r\n  \"streamsProperties\": {\r\n    \"ksql.streams.auto.offset.reset\": \"earliest\"\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8088/ksql",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8088",
+					"path": [
+						"ksql"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
 				}
 			},
 			"response": []
